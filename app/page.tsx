@@ -10,6 +10,7 @@ export default function Home() {
   const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<{ tokens: number | null; costUsd: number | null } | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,6 +18,7 @@ export default function Home() {
     setLoading(true);
     setError('');
     setSummary('');
+    setStats(null);
 
     const body = new FormData();
     body.append('file', file);
@@ -26,6 +28,7 @@ export default function Home() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Request failed');
       setSummary(json.summary);
+      setStats(json.stats ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
     } finally {
@@ -64,8 +67,19 @@ export default function Home() {
         </article>
       )}
 
+      {summary && stats && (stats.tokens !== null || stats.costUsd !== null) && (
+        <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
+          {[
+            stats.tokens !== null && `${stats.tokens.toLocaleString()} tokens`,
+            stats.costUsd !== null && `$${stats.costUsd.toFixed(4)} for this summary`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      )}
+
       <p className="mt-12 text-xs text-gray-500">
-        Demo only. Files are sent to an AI model and not stored. Not financial advice. Use sample or redacted statements.
+                Demo only. Summaries by Google Gemini 2.5 Flash via Vercel AI Gateway. Files are not stored. Not financial advice. Use sample or redacted statements.
       </p>
     </main>
   );

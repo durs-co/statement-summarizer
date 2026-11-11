@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     const data = new Uint8Array(await file.arrayBuffer());
 
-    const { text } = await generateText({
+    const { text, usage, providerMetadata } = await generateText({
       model: 'google/gemini-2.5-flash', // any PDF-capable model on AI Gateway works
       messages: [
         {
@@ -50,7 +50,16 @@ export async function POST(req: Request) {
       ],
     });
 
-    return Response.json({ summary: text });
+    // AI Gateway reports what this request actually cost (in USD, as a string).
+    const cost = Number(providerMetadata?.gateway?.cost);
+
+    return Response.json({
+      summary: text,
+      stats: {
+        tokens: usage.totalTokens ?? null,
+        costUsd: Number.isFinite(cost) ? cost : null,
+      },
+    });
   } catch (err) {
     console.error(err);
     return Response.json({ error: 'Something went wrong summarizing that file.' }, { status: 500 });
